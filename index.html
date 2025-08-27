@@ -1,69 +1,169 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
+<!doctype html>
+<html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <title>我操你媽</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden; /* 禁止滾動 */
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>本機登入頁</title>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<style>
+/* 背景全屏 */
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  background-color: #e8f0fe;  /* 淺灰藍背景 */
+  color: #111;
+}
+.card {
+  width: 380px;
+  background: rgba(255,255,255,0.85); /* 半透明 */
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(16,24,40,0.08);
+  padding: 28px;
+}
 
-    #grid {
-      display: grid;
-      grid-auto-rows: 100px; /* 格子高度 */
-      width: 100%;
-      height: 100%;
-    }
+:root { --accent: #1a73e8; --muted: #6b7280; }
+* { box-sizing: border-box; }
 
-    .cell {
-      height: 100px;
-      background-size: cover;
-      background-position: center;
-    }
 
-    .one { background-image: url("1.png"); }
-    .two { background-image: url("2.png"); }
-  </style>
+/* LOGO */
+.logo {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.logo svg { width: 48px; height: 48px; }
+
+h1 { margin: 18px 0 4px; font-size: 20px; }
+p.sub { margin: 0; color: var(--muted); }
+
+form { margin-top: 18px; }
+label { display: block; font-size: 13px; margin-bottom: 6px; }
+input[type=email], input[type=text] {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #e6e9ef;
+  font-size: 14px;
+}
+
+.captcha { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+.captcha img { width: 120px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #e6e9ef; }
+
+button.primary {
+  margin-top: 16px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.stream-box { display: none; margin-top: 20px; }
+.stream-grid img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e6e9ef;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.stream-grid img:hover { transform: scale(1.05); }
+
+.disclaimer { font-size: 12px; color: #b91c1c; margin-top: 10px; }
+
+/* 放大圖層 */
+#overlay {
+  display: none;
+  position: fixed;
+  top:0; left:0; width:100%; height:100%;
+  background: rgba(0,0,0,0.85);
+  justify-content: center; align-items: center;
+  z-index: 1000;
+}
+#overlay img { max-width: 95%; max-height: 95%; border-radius: 8px; }
+</style>
 </head>
 <body>
-  <div id="grid"></div>
+<div class="card" role="main">
 
-  <script>
-    const grid = document.getElementById("grid");
-    const cellSize = 100; // 格子大小
+  <div id="loginBox">
+    <div class="logo">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="24" cy="26" r="12" fill="#1a73e8"></circle>
+        <rect x="8" y="38" width="32" height="12" rx="3" fill="#34a853"></rect>
+      </svg>
+      <div>
+        <h1>登入</h1>
+        <p class="sub">使用你的本機帳戶</p>
+      </div>
+    </div>
 
-    function fillGrid() {
-      grid.innerHTML = ""; // 清空格子
+    <form id="mockForm" onsubmit="return false;">
+      <label for="email">帳號名稱</label>
+      <input id="email" name="identifier" type="email" autocomplete="username" placeholder="輸入帳號" required>
 
-      const cols = Math.ceil(window.innerWidth / cellSize);
-      const rows = Math.ceil(window.innerHeight / cellSize);
+      <div class="captcha">
+        <div style="flex:1">
+          <label for="ca">密碼</label>
+          <input id="ca" name="ca" type="text" placeholder="輸入密碼" autocomplete="off">
+          <div class="g-recaptcha" data-sitekey="6LcsBbUrAAAAAD6sJbzLGrM0I-b55W9TIX-Qz7B7"></div>
+        </div>
+      </div>
 
-      // 調整 grid-template-columns 自動填滿
-      grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      <button class="primary" id="nextBtn" onclick="login()">登入</button>
+    </form>
+  </div>
 
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const cell = document.createElement("div");
-          cell.classList.add("cell");
+  <div class="stream-box" id="streamBox">
+    <h2>監視器串流</h2>
+    <div class="stream-grid">
+      <h1>CH1</h1>
+      <img src="http://192.168.0.11/cgi-bin/net_jpeg.cgi?push=1&ch=1" alt="Camera CH1" onclick="enlarge(this)">
+      <h1>CH2</h1>
+      <img src="http://192.168.0.11/cgi-bin/net_jpeg.cgi?push=1&ch=8" alt="Camera CH2" onclick="enlarge(this)">
+      <h1>CH3</h1>
+      <img src="http://192.168.0.11/cgi-bin/net_jpeg.cgi?push=1&ch=4" alt="Camera CH3" onclick="enlarge(this)">
+      <h1>CH4</h1>
+      <img src="http://192.168.0.11/cgi-bin/net_jpeg.cgi?push=1&ch=2" alt="Camera CH4" onclick="enlarge(this)">
+    </div>
+    <div class="disclaimer">僅限同在監視器內網裝置顯示。</div>
+  </div>
 
-          // 偶數格用1.png，奇數格用2.png
-          if ((r + c) % 2 === 0) {
-            cell.classList.add("one");
-          } else {
-            cell.classList.add("two");
-          }
+</div>
 
-          grid.appendChild(cell);
-        }
-      }
-    }
+<!-- 放大層 -->
+<div id="overlay" onclick="this.style.display='none'">
+  <img id="overlayImg" src="">
+</div>
 
-    fillGrid(); // 初始填充
-    window.addEventListener("resize", fillGrid); // 視窗縮放時重排
-  </script>
+<script>
+function enlarge(el){
+  const overlay = document.getElementById('overlay');
+  const overlayImg = document.getElementById('overlayImg');
+  overlayImg.src = el.src;
+  overlay.style.display = 'flex';
+}
+
+function login() {
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("streamBox").style.display = "block";
+}
+
+document.getElementById('nextBtn').addEventListener('click', function(){
+  const email = document.getElementById('email').value.trim();
+  if(!email){
+    alert('請輸入帳號');
+    document.getElementById('email').focus();
+    return;
+  }
+});
+</script>
 </body>
 </html>

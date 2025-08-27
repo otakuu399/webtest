@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>我操你媽</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden; /* 禁止滾動 */
+    }
+
+    #grid {
+      display: grid;
+      grid-auto-rows: 100px; /* 格子高度 */
+      width: 100%;
+      height: 100%;
+    }
+
+    .cell {
+      height: 100px;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .one { background-image: url("1.png"); }
+    .two { background-image: url("2.png"); }
+  </style>
+</head>
+<body>
+  <div id="grid"></div>
+
+  <script>
+    const grid = document.getElementById("grid");
+    const cellSize = 100; // 格子大小
+
+    function fillGrid() {
+      grid.innerHTML = ""; // 清空格子
+
+      const cols = Math.ceil(window.innerWidth / cellSize);
+      const rows = Math.ceil(window.innerHeight / cellSize);
+
+      // 調整 grid-template-columns 自動填滿
+      grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cell = document.createElement("div");
+          cell.classList.add("cell");
+
+          // 偶數格用1.png，奇數格用2.png
+          if ((r + c) % 2 === 0) {
+            cell.classList.add("one");
+          } else {
+            cell.classList.add("two");
+          }
+
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    fillGrid(); // 初始填充
+    window.addEventListener("resize", fillGrid); // 視窗縮放時重排
+  </script>
+</body>
+</html>
